@@ -163,7 +163,7 @@ void filter_snow(const sensor_msgs::PointCloud2ConstPtr& msg)
     IBuilder* builder = createInferBuilder(logger);
     INetworkDefinition* network = builder->createNetworkV2(0);
     IParser* parser = createParser(*network, logger);
-    std::ifstream file("/var/local/home/aburai/outdet_cpp/outdet.onnx", std::ios::binary | std::ios::ate);
+    std::ifstream file("/var/local/home/aburai/test_catkin/src/outdet/saved_models/outdet.onnx", std::ios::binary | std::ios::ate);
     std::streamsize size = file.tellg();
     file.seekg(0, std::ios::beg);
     std::vector<char> buffer(size);
@@ -208,7 +208,7 @@ void filter_snow(const sensor_msgs::PointCloud2ConstPtr& msg)
 //        IHostMemory* serializedModel = builder->buildSerializedNetwork(*network, *conf_succes);
 
     // write engine to disk
-    const auto enginePath = "/var/local/home/aburai/outdet_cpp/outdet.trt";
+    const auto enginePath = "/var/local/home/aburai/test_catkin/src/outdet/saved_models/outdet.trt";
     std::ofstream outfile(enginePath, std::ofstream::binary);
     outfile.write(reinterpret_cast<const char *>(plan->data()), plan->size());
 
