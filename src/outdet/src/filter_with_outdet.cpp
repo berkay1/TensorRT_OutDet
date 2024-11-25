@@ -47,8 +47,22 @@ struct InferDeleter{
 };
 template <typename T>
 using TRTUniquePointer = std::unique_ptr<T, InferDeleter>;
+
+/*
+Author (bgodeogl)
+Everything is under callback function.
+Callback functions are special functions that are invoked when a message is received.
+In your case, callback will be called when a point cloud is received.
+*/
 void filter_snow(const sensor_msgs::PointCloud2ConstPtr& msg)
 {
+    /*
+    Author (bgodeogl)
+    nodeHandle is a factory class to create ros::Subscriber, ros::Publisher and another types of ros utilities.
+    You don't need to create it under callback function unless you have the intention of creating ros subscriber 
+    or publishers after some message is received.
+    */
+
     // to advertise the filtered cloud
     ros::NodeHandle n;
     // topic name
@@ -82,6 +96,10 @@ void filter_snow(const sensor_msgs::PointCloud2ConstPtr& msg)
 
     out_msg.point_step = 16; // size of point in bytes
     // run at 10Hz
+    /*
+    ros::rate is a loop control mechanism where you put it inside loops. It is unnecessary here. and usually callback functions doesn't include loops.
+    They just process message and return.
+    */
     ros::Rate loop_rate(10);
 
     //
@@ -163,6 +181,11 @@ void filter_snow(const sensor_msgs::PointCloud2ConstPtr& msg)
     IBuilder* builder = createInferBuilder(logger);
     INetworkDefinition* network = builder->createNetworkV2(0);
     IParser* parser = createParser(*network, logger);
+    /*
+    Author(bgodeogl)
+    to run your code agnostic from the system that is working on you should use a container or you should pass relative paths.
+    We can not locate this file.
+    */
     std::ifstream file("/var/local/home/aburai/test_catkin/src/outdet/saved_models/outdet.onnx", std::ios::binary | std::ios::ate);
     std::streamsize size = file.tellg();
     file.seekg(0, std::ios::beg);
@@ -203,11 +226,20 @@ void filter_snow(const sensor_msgs::PointCloud2ConstPtr& msg)
 
 //        IBuilderConfig* config = builder->createBuilderConfig();
     conf_succes->setMemoryPoolLimit(MemoryPoolType::kWORKSPACE, 1024*1024*1024);
-    conf_succes->setMemoryPoolLimit(MemoryPoolType::kTACTIC_SHARED_MEMORY, 1024*1024*1024);
+    /*
+    Author(bgodeogl)
+    following function is commented because it prevents the compilation. it is not supported in TensorRT 8.5.10
+    */
+    // conf_succes->setMemoryPoolLimit(MemoryPoolType::kTACTIC_SHARED_MEMORY, 1024*1024*1024);
     std::unique_ptr<IHostMemory> plan{builder->buildSerializedNetwork(*network, *conf_succes)};
 //        IHostMemory* serializedModel = builder->buildSerializedNetwork(*network, *conf_succes);
 
     // write engine to disk
+    /*
+    Author(bgodeogl)
+    to run your code agnostic from the system that is working on you should use a container or you should pass relative paths.
+    We can not locate this file.
+    */
     const auto enginePath = "/var/local/home/aburai/test_catkin/src/outdet/saved_models/outdet.trt";
     std::ofstream outfile(enginePath, std::ofstream::binary);
     outfile.write(reinterpret_cast<const char *>(plan->data()), plan->size());
@@ -345,6 +377,13 @@ int main(int argc, char **argv)
     // handler for point subscriber node
     ros::NodeHandle n;
     // topic name
+    /*
+    Resolve name helps you resolve the full topic name from part of it.
+    if there is a topic with /node_name/input_cloud
+    std::string topic = n.resolveName("input_cloud");
+    helps you resolve /node_name/input_cloud from input_cloud.
+    It is not necessary in your case since you have just few topics.
+    */
     std::string topic = n.resolveName("input_cloud");
     // subscriber
     ros::Subscriber sub = n.subscribe(topic, 10, filter_snow);
